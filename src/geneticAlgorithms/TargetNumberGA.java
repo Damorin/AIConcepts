@@ -21,6 +21,7 @@ public class TargetNumberGA {
 
     private float target;
 
+    private Chromosome correct;
     private List<Chromosome> population;
     private List<Float> populationFitness;
 
@@ -33,7 +34,15 @@ public class TargetNumberGA {
 
         this.createPopulation();
 
-        this.checkForCorrectSolution();
+        while(!checkForCorrectSolution()) {
+            float whatToDo = rng.nextFloat();
+            if (whatToDo >= crossoverRate) {
+
+            }
+            else if (whatToDo <= mutationRate) {
+
+            }
+        }
     }
 
     private void createPopulation() {
@@ -46,13 +55,17 @@ public class TargetNumberGA {
     private boolean checkForCorrectSolution() {
         for (int i = 0; i < POPULATION_SIZE; i++) {
             if(fitnessOf(population.get(i)) == 0) {
+                correct = population.get(i);
                 return true;
+            }
+            else {
+                populationFitness.add(i, fitnessOf(population.get(i)));
             }
         }
         return false;
     }
 
-    private float fitnessOf(Chromosome candidate) {
+    private Float fitnessOf(Chromosome candidate) {
         return 0.0f;
     }
 }

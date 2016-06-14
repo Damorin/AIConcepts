@@ -1,5 +1,7 @@
 package geneticAlgorithms;
 
+import org.apache.commons.jexl3.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -19,12 +21,7 @@ public class Chromosome {
         rng = new Random();
         binaryString = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
-            if(i % 2 == 0) {
-                binaryString.add(Integer.toBinaryString(rng.nextInt(4)) + 11);
-            }
-                else {
-                binaryString.add(Integer.toBinaryString(rng.nextInt(11)));
-            }
+            binaryString.add(String.format("%4s", Integer.toBinaryString(rng.nextInt(14))).replace(" ", "0"));
         }
         displayChromosome();
     }
@@ -35,38 +32,66 @@ public class Chromosome {
             System.out.print(string + " ");
         }
         System.out.println();
-        decode();
+        try {
+            System.out.println(decode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public float decode() {
+    public Integer decode() throws Exception {
         String calculation = "";
 
+        boolean wasNumber = false;
         for (String component : binaryString) {
             int componentValue = Integer.parseInt(component, 2);
-            if (componentValue >= 0 && componentValue <= 9) {
-                calculation = calculation + componentValue;
-            } else if (componentValue == 10) {
-                calculation = calculation + "+";
-            } else if (componentValue == 11) {
-                calculation = calculation + "-";
-            } else if (componentValue == 12) {
-                calculation = calculation + "*";
-            } else if (componentValue == 13) {
-                calculation = calculation + "/";
+            if (!wasNumber) {
+                if (componentValue >= 0 && componentValue <= 9) {
+                    calculation = calculation + componentValue;
+                    wasNumber = true;
+                }
+            } else {
+                if (componentValue == 10) {
+                    calculation = calculation + "+";
+                    wasNumber = false;
+                } else if (componentValue == 11) {
+                    calculation = calculation + "-";
+                    wasNumber = false;
+                } else if (componentValue == 12) {
+                    calculation = calculation + "*";
+                    wasNumber = false;
+                } else if (componentValue == 13) {
+                    calculation = calculation + "/";
+                    wasNumber = false;
+                }
             }
         }
 
+        if (!Character.isDigit(calculation.charAt(calculation.length() - 1))) {
+            calculation = calculation.substring(0, calculation.length() - 1);
+        }
         System.out.println("Chromosome calculation: " + calculation);
 
         return performCalculation(calculation);
     }
 
-    private float performCalculation(String calculation) {
-        return 0.0f;
+    private Integer performCalculation(String calculation) {
+        JexlEngine jexl = new JexlBuilder().create();
+        JexlExpression expression = jexl.createExpression(calculation);
+        JexlContext context = new MapContext();
+        Object o = expression.evaluate(context);
+        return (Integer) o;
     }
 
-    public void mutate() {
-
+    public void mutate(float mutationRate) {
+        for(String component : binaryString) {
+            for (int i = 0; i < 4; i++) {
+                if (rng.nextFloat() <= mutationRate) {
+                    if (component.charAt(i) == '0') {
+                    }
+                }
+            }
+        }
     }
 
     public void crossover(Chromosome mate) {
