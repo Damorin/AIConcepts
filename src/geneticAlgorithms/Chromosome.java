@@ -3,6 +3,7 @@ package geneticAlgorithms;
 import org.apache.commons.jexl3.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -14,56 +15,96 @@ import java.util.Random;
  */
 public class Chromosome {
 
-    private List<String> binaryString;
+    private static final int BOUND = 44;
+
+    private float value = 0;
+
+    private StringBuilder binaryString = new StringBuilder();
+    private String calculation;
+
     private Random rng;
 
     public Chromosome() {
         rng = new Random();
-        binaryString = new ArrayList<>();
-        for (int i = 0; i < 12; i++) {
-            binaryString.add(String.format("%4s", Integer.toBinaryString(rng.nextInt(14))).replace(" ", "0"));
-        }
-        displayChromosome();
-    }
-
-    private void displayChromosome() {
-        System.out.println("New Chromosome");
-        for (String string : binaryString) {
-            System.out.print(string + " ");
-        }
-        System.out.println();
+        generateString();
         try {
-            System.out.println(decode());
+            decode();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public Integer decode() throws Exception {
-        String calculation = "";
+    public Chromosome(StringBuilder binaryString) {
+        rng = new Random();
+        this.binaryString = binaryString;
+        try {
+            decode();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    private void generateString() {
+        List<String> tempList = new ArrayList<>();
+        int numOf1 = rng.nextInt(BOUND);
+        int numOf0 = BOUND - numOf1;
+        for (int i = 0; i < numOf1; i++) {
+            tempList.add("1");
+        }
+        for (int i = 0; i < numOf0; i++) {
+            tempList.add("0");
+        }
+        Collections.shuffle(tempList);
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String component : tempList) {
+            stringBuilder.append(component);
+            binaryString.append(stringBuilder.toString());
+        }
+    }
+
+//    private void displayChromosome() {
+//        System.out.println("New Chromosome");
+//        System.out.print(binaryString);
+//        System.out.println();
+//        try {
+//            System.out.println(decode());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public float decode() throws Exception {
         boolean wasNumber = false;
-        for (String component : binaryString) {
-            int componentValue = Integer.parseInt(component, 2);
-            if (!wasNumber) {
-                if (componentValue >= 0 && componentValue <= 9) {
-                    calculation = calculation + componentValue;
-                    wasNumber = true;
+        calculation = "";
+        while (calculation.length() == 0) {
+            for (int i = 0; i < BOUND; i += 4) {
+                String component = binaryString.substring(i, i + 4);
+                int componentValue = Integer.parseInt(component, 2);
+                if (!wasNumber) {
+                    if (componentValue >= 0 && componentValue <= 9) {
+                        calculation = calculation + componentValue;
+                        wasNumber = true;
+                    }
+
+                } else {
+                    if (componentValue == 10) {
+                        calculation = calculation + "+";
+                        wasNumber = false;
+                    } else if (componentValue == 11) {
+                        calculation = calculation + "-";
+                        wasNumber = false;
+                    } else if (componentValue == 12) {
+                        calculation = calculation + "*";
+                        wasNumber = false;
+                    } else if (componentValue == 13) {
+                        calculation = calculation + "/";
+                        wasNumber = false;
+                    }
                 }
-            } else {
-                if (componentValue == 10) {
-                    calculation = calculation + "+";
-                    wasNumber = false;
-                } else if (componentValue == 11) {
-                    calculation = calculation + "-";
-                    wasNumber = false;
-                } else if (componentValue == 12) {
-                    calculation = calculation + "*";
-                    wasNumber = false;
-                } else if (componentValue == 13) {
-                    calculation = calculation + "/";
-                    wasNumber = false;
-                }
+            }
+            if (calculation.length() == 0) {
+                binaryString = new StringBuilder();
+                generateString();
             }
         }
 
@@ -72,29 +113,43 @@ public class Chromosome {
         }
         System.out.println("Chromosome calculation: " + calculation);
 
-        return performCalculation(calculation);
+        calculateValue();
+        return getValue();
     }
 
-    private Integer performCalculation(String calculation) {
+    private void calculateValue() {
         JexlEngine jexl = new JexlBuilder().create();
         JexlExpression expression = jexl.createExpression(calculation);
         JexlContext context = new MapContext();
         Object o = expression.evaluate(context);
-        return (Integer) o;
+        value = (Integer) o;
     }
 
-    public void mutate(float mutationRate) {
-        for(String component : binaryString) {
-            for (int i = 0; i < 4; i++) {
-                if (rng.nextFloat() <= mutationRate) {
-                    if (component.charAt(i) == '0') {
-                    }
-                }
+    public Chromosome mutate(float mutationRate) {
+
+        StringBuilder tempString = this.binaryString;
+        for (int i = 0; i < binaryString.length(); i++) {
+            if (rng.nextFloat() <= mutationRate) {
+                tempString.setCharAt(i, (tempString.charAt(i) == '0' ? '1' : '0'));
             }
         }
+        return new Chromosome(tempString);
     }
 
-    public void crossover(Chromosome mate) {
-
+    public Chromosome crossover(Chromosome mate, int point) {
+        StringBuilder tempString = new StringBuilder();
+        tempString.append(this.binaryString.substring(0, point));
+        tempString.append(mate.getBinaryString().substring(point));
+        return new Chromosome(tempString);
     }
+
+    private StringBuilder getBinaryString() {
+        return this.binaryString;
+    }
+
+    public float getValue() {
+        return value;
+    }
+
+    public String getCalculation() { return calculation; }
 }

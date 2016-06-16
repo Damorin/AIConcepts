@@ -8,6 +8,6 @@ package geneticAlgorithms;
  */
 public class Main {
     public static void main(String[] args) {
-        TargetNumberGA run = new TargetNumberGA(12);
+        TargetNumberGA run = new TargetNumberGA(42);
     }
 }
